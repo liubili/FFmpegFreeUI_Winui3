@@ -48,6 +48,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>  <!-- 新增行定义 -->
             </Grid.RowDefinitions>
 
             <!-- 下载按钮和打开按钮 -->
@@ -59,6 +60,18 @@
                         <FontIcon Glyph="&#xE896;"/>
                         <TextBlock Text="下载最新FFmpeg"/>
                     </StackPanel>
+                </Button>
+                <!-- 添加 winget 安装按钮 -->
+                <Button x:Name="WingetInstallBtn"
+                        Style="{StaticResource ActionButtonStyle}"
+                        Click="OnWingetInstall">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE719;"/>  <!-- 使用商店图标 -->
+                        <TextBlock Text="通过 winget 安装"/>
+                    </StackPanel>
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="使用 Windows Package Manager (winget) 安装 FFmpeg"/>
+                    </ToolTipService.ToolTip>
                 </Button>
                 <Button x:Name="OpenFfmpegFolderBtn" 
                         Click="OnOpenFfmpegFolder" 
@@ -101,6 +114,27 @@
                     </StackPanel>
                 </Border>
             </Grid>
+
+            <!-- Winget 安装状态 -->
+            <Border x:Name="WingetStatusBorder"
+                    Grid.Row="3"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="12,8"
+                    Margin="0,8,0,0"
+                    Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <ProgressRing x:Name="WingetProgressRing" 
+                                 IsActive="False" 
+                                 Width="16" 
+                                 Height="16"/>
+                    <TextBlock x:Name="WingetStatusText"
+                              Style="{StaticResource CaptionTextBlockStyle}"
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
         </Grid>
 
         <!-- 4. 信息卡片 -->

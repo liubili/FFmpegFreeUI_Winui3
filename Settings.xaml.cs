@@ -217,6 +217,83 @@ public sealed partial class Settings : Microsoft.UI.Xaml.Controls.Page  // 修正 
         }
     }
 
+    private async void OnWingetInstall(object sender, RoutedEventArgs e)
+    {
+        WingetInstallBtn.IsEnabled = false;
+        WingetStatusBorder.Visibility = Visibility.Visible;
+        WingetProgressRing.IsActive = true;
+        
+        try
+        {
+            // 检查是否安装了 winget
+            var wingetCheck = new ProcessStartInfo
+            {
+                FileName = "where",
+                Arguments = "winget",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var checkProcess = Process.Start(wingetCheck);
+            await checkProcess!.WaitForExitAsync();
+
+            if (checkProcess.ExitCode != 0)
+            {
+                ShowInfo("未找到 winget，请确保已安装 Windows Package Manager", true);
+                return;
+            }
+
+            // 使用 winget 安装 FFmpeg
+            WingetStatusText.Text = "正在安装 FFmpeg...";
+            
+            var psi = new ProcessStartInfo
+            {
+                FileName = "winget",
+                Arguments = "install FFmpeg",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(psi);
+            
+            // 读取输出
+            while (!process!.StandardOutput.EndOfStream)
+            {
+                var line = await process.StandardOutput.ReadLineAsync();
+                if (!string.IsNullOrEmpty(line))
+                {
+                    WingetStatusText.Text = line;
+                }
+            }
+
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode == 0)
+            {
+                ShowInfo("FFmpeg 安装成功", false);
+                // 刷新路径检查
+                await InitializeAsync();
+            }
+            else
+            {
+                ShowInfo("FFmpeg 安装失败", true);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowInfo($"安装出错: {ex.Message}", true);
+        }
+        finally
+        {
+            WingetInstallBtn.IsEnabled = true;
+            WingetProgressRing.IsActive = false;
+            WingetStatusBorder.Visibility = Visibility.Collapsed;
+        }
+    }
+
     protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
     {
         base.OnNavigatingFrom(e);
