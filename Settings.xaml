@@ -9,32 +9,105 @@
     mc:Ignorable="d">
 
     <Grid Padding="32" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="20">
-        <!-- 1. FFmpeg bin 路径输入和提示 -->
-        <TextBlock Text="FFmpeg bin 路径：" VerticalAlignment="Center"/>
-        <StackPanel Orientation="Horizontal" Grid.Row="1" Spacing="8">
-            <TextBox x:Name="FfmpegPathBox" Width="400" PlaceholderText="请输入FFmpeg的bin目录路径"/>
-            <Button Content="选择..." Click="OnSelectFfmpegPath"/>
-            <ToolTipService.ToolTip>
-                <ToolTip Content="输入FFmpeg可执行文件（如ffmpeg.exe）所在的bin目录路径"/>
-            </ToolTipService.ToolTip>
+        <Grid.Resources>
+            <!-- 统一按钮样式 -->
+            <Style x:Key="ActionButtonStyle" TargetType="Button">
+                <Setter Property="MinWidth" Value="120"/>
+                <Setter Property="Height" Value="36"/>
+                <Setter Property="CornerRadius" Value="4"/>
+            </Style>
+        </Grid.Resources>
+
+        <!-- 1. 页面标题 -->
+        <TextBlock Text="FFmpeg 配置"
+                 Style="{StaticResource TitleTextBlockStyle}"
+                 Margin="0,0,0,24"/>
+
+        <!-- 2. FFmpeg bin 路径输入和提示 -->
+        <StackPanel Grid.Row="1" Spacing="8">
+            <TextBlock Text="FFmpeg bin 路径" 
+                     Style="{StaticResource SubtitleTextBlockStyle}"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBox x:Name="FfmpegPathBox" 
+                        Width="400" 
+                        PlaceholderText="请输入FFmpeg的bin目录路径"
+                        ToolTipService.ToolTip="输入FFmpeg可执行文件（如ffmpeg.exe）所在的bin目录路径"/>
+                <Button Click="OnSelectFfmpegPath"
+                        Style="{StaticResource ActionButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE8DA;"/>
+                        <TextBlock Text="选择目录"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </StackPanel>
 
-        <!-- 2. 自动获取FFmpeg最新版本下载按钮与提示气泡 -->
-        <StackPanel Orientation="Horizontal" Grid.Row="2" Spacing="8">
-            <Button x:Name="DownloadFfmpegBtn" Content="下载最新FFmpeg" Click="OnDownloadFfmpeg"/>
-            <Button x:Name="OpenFfmpegFolderBtn" Content="打开" Click="OnOpenFfmpegFolder" Visibility="Collapsed"/>
-            <ToolTipService.ToolTip>
-                <ToolTip Content="点击自动下载并保存最新版本的FFmpeg"/>
-            </ToolTipService.ToolTip>
-        </StackPanel>
+        <!-- 3. 下载区域 -->
+        <Grid Grid.Row="2" RowSpacing="12">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-        <!-- 3. 下载进度条 -->
-        <ProgressBar x:Name="DownloadProgressBar" Grid.Row="3" Height="8" Minimum="0" Maximum="100" Visibility="Collapsed" Margin="0,8,0,0"/>
+            <!-- 下载按钮和打开按钮 -->
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button x:Name="DownloadFfmpegBtn" 
+                        Style="{StaticResource AccentButtonStyle}"
+                        Click="OnDownloadFfmpeg">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE896;"/>
+                        <TextBlock Text="下载最新FFmpeg"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="OpenFfmpegFolderBtn" 
+                        Click="OnOpenFfmpegFolder" 
+                        Visibility="Collapsed"
+                        Style="{StaticResource ActionButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE838;"/>
+                        <TextBlock Text="打开目录"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
 
-        <!-- 4. 状态与错误提示 -->
-        <StackPanel Orientation="Horizontal" Grid.Row="4" Spacing="8" VerticalAlignment="Center">
-            <TextBlock x:Name="InfoTextBlock" FontSize="14" VerticalAlignment="Center"/>
-            <InfoBadge x:Name="ErrorInfoBadge" Foreground="Red" Visibility="Collapsed" VerticalAlignment="Center"/>
-        </StackPanel>
+            <!-- PATH设置选项 -->
+            <CheckBox x:Name="RegisterToPathCheckBox" 
+                      Grid.Row="1"
+                      Content="下载后添加到系统 PATH" 
+                      IsChecked="True"/>
+
+            <!-- 进度条 -->
+            <Grid Grid.Row="2" x:Name="ProgressGrid" Visibility="Collapsed">
+                <ProgressBar x:Name="DownloadProgressBar" 
+                            Height="4" 
+                            Minimum="0" 
+                            Maximum="100"
+                            Margin="0,8,0,0"/>
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Padding="12,8"
+                        Margin="0,20,0,0">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <ProgressRing IsActive="True" Width="16" Height="16"/>
+                        <TextBlock x:Name="InfoTextBlock" 
+                                 Style="{StaticResource CaptionTextBlockStyle}"
+                                 VerticalAlignment="Center"/>
+                        <InfoBadge x:Name="ErrorInfoBadge" 
+                                  Foreground="{ThemeResource SystemFillColorCriticalBrush}" 
+                                  Visibility="Collapsed"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- 4. 信息卡片 -->
+        <InfoBar Grid.Row="3"
+                 x:Name="StatusInfoBar"
+                 IsOpen="False"
+                 Severity="Informational"
+                 Title="FFmpeg 状态"/>
     </Grid>
 </Page>

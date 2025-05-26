@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using FFmpegFreeUI.FFmpegService;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -27,6 +28,7 @@ namespace FFmpegFreeUI
     public partial class App : Application
     {
         public static Window MainWindow { get; private set; }
+        public static IFfmpegService FfmpegService { get; private set; }
 
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
@@ -35,6 +37,7 @@ namespace FFmpegFreeUI
         public App()
         {
             InitializeComponent();
+            UnhandledException += App_UnhandledException;
         }
 
         /// <summary>
@@ -43,8 +46,16 @@ namespace FFmpegFreeUI
         /// <param name="args">Details about the launch request and process.</param>
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
+            // 首先初始化服务
+            FfmpegService = new FfmpegService(AppContext.BaseDirectory);
+
             MainWindow = new MainWindow();
             MainWindow.Activate();
+        }
+
+        private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
+        {
+            e.Handled = true;
         }
     }
 }

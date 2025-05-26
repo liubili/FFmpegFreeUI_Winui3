@@ -31,31 +31,51 @@ namespace FFmpegFreeUI
     {
         public MainWindow()
         {
-            InitializeComponent();
-            nvSample.SelectionChanged += NvSample_SelectionChanged;
-            // 默认导航到主页
-            contentFrame.Navigate(typeof(Home));
+            this.InitializeComponent();
+
+            // 确保在设置事件处理器之前 NavigationView 已经初始化
+            if (nvSample != null)
+            {
+                nvSample.SelectionChanged += NvSample_SelectionChanged;
+                // 默认导航到主页，但要确保页面类型存在
+                contentFrame.Navigate(typeof(Home));
+            }
         }
 
         private void NvSample_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
         {
-            if (args.SelectedItem is NavigationViewItem item)
+            try
             {
-                var pageTag = item.Tag?.ToString();
-                Type pageType = pageTag switch
+                if (args.SelectedItem is NavigationViewItem item)
                 {
-                    "Home" => typeof(Home),
-                    "SamplePage2" => typeof(Home),
-                    "SamplePage3" => typeof(Home),
-                    "SamplePage4" => typeof(Home),
-                    "Settings" => typeof(Settings),
-                    _ => null
-                };
-                if (pageType != null)
-                {
-                    Console.WriteLine(pageType);
-                    contentFrame.Navigate(pageType);
+                    var pageTag = item.Tag?.ToString();
+                    Type pageType = pageTag switch
+                    {
+                        "Home" => typeof(Home),
+                        "Settings" => typeof(Settings),
+                        _ => typeof(Home)  // 默认导航到主页
+                    };
+
+                    // 确保 contentFrame 不为空
+                    if (contentFrame != null)
+                    {
+                        // 使用 try-catch 包装导航操作
+                        try
+                        {
+                            contentFrame.Navigate(pageType);
+                        }
+                        catch (Exception ex)
+                        {
+                            // 导航失败时的处理
+                            System.Diagnostics.Debug.WriteLine($"Navigation failed: {ex.Message}");
+                        }
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                // 处理选择更改事件中的异常
+                System.Diagnostics.Debug.WriteLine($"Selection changed error: {ex.Message}");
             }
         }
     }

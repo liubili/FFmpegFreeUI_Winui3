@@ -18,34 +18,102 @@ using Windows.Storage.Pickers;
 using Windows.Storage;
 using System.IO.Compression;
 using System.Diagnostics;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using System.Threading;
+using FFmpegFreeUI.FFmpegService;  // 添加 FFmpegService 命名空间引用
 
 namespace FFmpegFreeUI;
 
-/// <summary>
-/// An empty page that can be used on its own or navigated to within a Frame.
-/// </summary>
-public sealed partial class Settings : Microsoft.UI.Xaml.Controls.Page
+public sealed partial class Settings : Microsoft.UI.Xaml.Controls.Page  // 修正 Page 的引用
 {
-    private readonly string ffmpegDir = Path.Combine(AppContext.BaseDirectory, "ffmpeg");
+    private readonly IFfmpegService _ffmpegService = null!; // 使用 null! 标记
+    private CancellationTokenSource _downloadCts = null!;   // 使用 null! 标记
+    private const string FfmpegPathKey = "FfmpegBinPath";
 
     public Settings()
     {
-        InitializeComponent();
-        DownloadProgressBar.Visibility = Visibility.Collapsed;
-        ErrorInfoBadge.Visibility = Visibility.Collapsed;
-        OpenFfmpegFolderBtn.Visibility = Visibility.Collapsed;
+        try
+        {
+            InitializeComponent();
+            
+            // 使用App中的服务实例，如果没有则创建新实例
+            _ffmpegService = App.FfmpegService ?? new FfmpegService(AppContext.BaseDirectory);
+            _downloadCts = new CancellationTokenSource();
+            
+            // 异步初始化
+            DispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    await InitializeAsync();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Settings initialization error: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Settings constructor error: {ex.Message}");
+        }
     }
 
-    // 获取当前窗口句柄
+    private async Task InitializeAsync()
+    {
+        try
+        {
+            // 1. 先检查保存的路径
+            LoadSavedPath();
+
+            // 2. 如果没有保存的路径，尝试自动查找
+            if (string.IsNullOrEmpty(FfmpegPathBox.Text))
+            {
+                var binPath = await _ffmpegService.FindFfmpegBinPathAsync();
+                if (!string.IsNullOrEmpty(binPath))
+                {
+                    FfmpegPathBox.Text = binPath;
+                    await CheckFfmpegPathAndShowInfoAsync(binPath);
+                }
+            }
+
+            // 3. 检查环境变量
+            if (await _ffmpegService.CheckFfmpegInPathAsync())
+            {
+                StatusInfoBar.Message = "FFmpeg 已在系统 PATH 中";
+                StatusInfoBar.Severity = InfoBarSeverity.Success;
+                StatusInfoBar.IsOpen = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Initialize async error: {ex.Message}");
+        }
+    }
+
+    private void LoadSavedPath()
+    {
+        try
+        {
+            var settings = ApplicationData.Current.LocalSettings;
+            if (settings.Values.TryGetValue(FfmpegPathKey, out var pathObj) && 
+                pathObj is string path &&
+                !string.IsNullOrWhiteSpace(path))
+            {
+                FfmpegPathBox.Text = path;
+                _ = CheckFfmpegPathAndShowInfoAsync(path);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Load saved path error: {ex.Message}");
+        }
+    }
+
     private IntPtr GetWindowHandle()
     {
         return WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
     }
 
-    // 选择FFmpeg bin路径
     private async void OnSelectFfmpegPath(object sender, RoutedEventArgs e)
     {
         var picker = new FolderPicker();
@@ -57,80 +125,73 @@ public sealed partial class Settings : Microsoft.UI.Xaml.Controls.Page
         if (folder != null)
         {
             FfmpegPathBox.Text = folder.Path;
-            ShowInfo("已选择FFmpeg路径", false);
+            await CheckFfmpegPathAndShowInfoAsync(folder.Path);
         }
     }
 
-    // 下载最新FFmpeg
+    private async Task CheckFfmpegPathAndShowInfoAsync(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+
+        if (await _ffmpegService.CheckFfmpegExistsAsync(path))
+        {
+            var version = await _ffmpegService.GetFfmpegVersionAsync(path);
+            ShowInfo($"FFmpeg 有效，版本: {version}", false);
+            OpenFfmpegFolderBtn.Visibility = Visibility.Visible;
+            
+            // 保存有效路径
+            ApplicationData.Current.LocalSettings.Values[FfmpegPathKey] = path;
+
+            // 更新 InfoBar
+            StatusInfoBar.Message = $"已找到 FFmpeg: {version}";
+            StatusInfoBar.Severity = InfoBarSeverity.Success;
+            StatusInfoBar.IsOpen = true;
+        }
+        else
+        {
+            ShowInfo("无效的 FFmpeg 路径", true);
+            OpenFfmpegFolderBtn.Visibility = Visibility.Collapsed;
+            
+            // 更新 InfoBar
+            StatusInfoBar.Message = "未找到有效的 FFmpeg";
+            StatusInfoBar.Severity = InfoBarSeverity.Warning;
+            StatusInfoBar.IsOpen = true;
+        }
+    }
+
     private async void OnDownloadFfmpeg(object sender, RoutedEventArgs e)
     {
         DownloadFfmpegBtn.IsEnabled = false;
-        DownloadProgressBar.Visibility = Visibility.Visible;
-        DownloadProgressBar.Value = 0;
-        ShowInfo("正在获取最新FFmpeg版本...", false);
+        ProgressGrid.Visibility = Visibility.Visible;
         ErrorInfoBadge.Visibility = Visibility.Collapsed;
         OpenFfmpegFolderBtn.Visibility = Visibility.Collapsed;
 
         try
         {
-            string ffmpegUrl = await GetLatestFfmpegUrl();
-            if (string.IsNullOrEmpty(ffmpegUrl))
+            var progress = new Progress<FFmpegService.DownloadProgress>(p =>  // 修正 DownloadProgress 的命名空间
             {
-                ShowInfo("未能获取下载链接。", true);
-                    return;
-            }
+                DownloadProgressBar.Value = p.Percentage;
+                ShowInfo(p.Status, false);
+            });
 
-            // 下载到临时文件
-            string tempZip = Path.Combine(Path.GetTempPath(), "ffmpeg-latest.zip");
-            using (var http = new HttpClient())
-            using (var response = await http.GetAsync(ffmpegUrl, HttpCompletionOption.ResponseHeadersRead))
+            var result = await _ffmpegService.DownloadAndExtractAsync(
+                RegisterToPathCheckBox.IsChecked ?? false,
+                progress,
+                _downloadCts.Token);
+
+            if (result.success)
             {
-                response.EnsureSuccessStatusCode();
-                var total = response.Content.Headers.ContentLength ?? 0L;
-                var canReport = total > 0;
-
-                using (var stream = await response.Content.ReadAsStreamAsync())
-                using (var fs = File.Create(tempZip))
-                {
-                    var buffer = new byte[81920];
-                    long read = 0;
-                    int n;
-                    while ((n = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
-                    {
-                        await fs.WriteAsync(buffer, 0, n);
-                        read += n;
-                        if (canReport)
-                        {
-                            DownloadProgressBar.Value = (double)read / total * 100;
-                        }
-                    }
-                }
-            }
-
-            DownloadProgressBar.Value = 100;
-            ShowInfo("下载完成，正在解压...", false);
-
-            // 解压到程序目录下 ffmpeg 文件夹
-            if (Directory.Exists(ffmpegDir))
-                Directory.Delete(ffmpegDir, true);
-            ZipFile.ExtractToDirectory(tempZip, ffmpegDir);
-
-            // 查找 bin 目录
-            var binPath = Directory.GetDirectories(ffmpegDir, "bin", SearchOption.AllDirectories).FirstOrDefault();
-            if (binPath != null)
-            {
-                FfmpegPathBox.Text = binPath;
-                ShowInfo("FFmpeg 下载并解压完成", false);
+                FfmpegPathBox.Text = result.path;
                 OpenFfmpegFolderBtn.Visibility = Visibility.Visible;
+                ShowInfo(result.message, false);
+                
+                // 保存路径
+                ApplicationData.Current.LocalSettings.Values[FfmpegPathKey] = result.path;
             }
             else
             {
-                ShowInfo("解压失败，未找到 bin 目录。", true);
+                ShowInfo(result.message, true);
             }
-        }
-        catch (Exception ex)
-        {
-            ShowInfo("下载或解压失败: " + ex.Message, true);
         }
         finally
         {
@@ -156,28 +217,28 @@ public sealed partial class Settings : Microsoft.UI.Xaml.Controls.Page
         }
     }
 
-    // 获取最新FFmpeg下载链接（以gyan.dev为例，实际可根据需要更换源）
-    private async Task<string> GetLatestFfmpegUrl()
+    protected override void OnNavigatingFrom(NavigatingCancelEventArgs e)
     {
-        // 这里直接返回gyan.dev的最新win64静态版链接
-        // 实际可通过爬虫或API获取最新版本
-        await Task.CompletedTask;
-        return "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip";
+        base.OnNavigatingFrom(e);
+        // 不取消下载，让它在后台继续进行
     }
 
-    // 显示信息和错误
     private void ShowInfo(string message, bool isError)
     {
         InfoTextBlock.Text = message;
+        StatusInfoBar.Message = message;
+        StatusInfoBar.IsOpen = true;
+        StatusInfoBar.Severity = isError ? InfoBarSeverity.Error : InfoBarSeverity.Success;
+        
         if (isError)
         {
-            InfoTextBlock.Foreground = new SolidColorBrush(Microsoft.UI.Colors.Red);
             ErrorInfoBadge.Visibility = Visibility.Visible;
+            StatusInfoBar.Title = "错误";
         }
         else
         {
-            InfoTextBlock.Foreground = new SolidColorBrush(Microsoft.UI.Colors.Green);
             ErrorInfoBadge.Visibility = Visibility.Collapsed;
+            StatusInfoBar.Title = "FFmpeg 状态";
         }
     }
 }
