@@ -29,9 +29,15 @@ namespace FFmpegFreeUI
     /// </summary>
     public sealed partial class MainWindow : Window
     {
+        // 声明 SettingsNavItem 字段用于引用“设置”导航项
+        private NavigationViewItem? SettingsNavItem;
+
         public MainWindow()
         {
             this.InitializeComponent();
+
+            // 初始化 SettingsNavItem
+            SettingsNavItem = FindSettingsNavItem();
 
             // 确保在设置事件处理器之前 NavigationView 已经初始化
             if (nvSample != null)
@@ -40,6 +46,24 @@ namespace FFmpegFreeUI
                 // 默认导航到主页，但要确保页面类型存在
                 contentFrame.Navigate(typeof(Home));
             }
+        }
+
+        // 查找 Tag="Settings" 的 NavigationViewItem
+        private NavigationViewItem? FindSettingsNavItem()
+        {
+            // 检查 FooterMenuItems
+            foreach (var obj in nvSample.FooterMenuItems)
+            {
+                if (obj is NavigationViewItem item && (item.Tag?.ToString() == "Settings"))
+                    return item;
+            }
+            // 检查 MenuItems（如果你把设置放在主菜单）
+            foreach (var obj in nvSample.MenuItems)
+            {
+                if (obj is NavigationViewItem item && (item.Tag?.ToString() == "Settings"))
+                    return item;
+            }
+            return null;
         }
 
         private void NvSample_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
@@ -53,6 +77,9 @@ namespace FFmpegFreeUI
                     {
                         "Home" => typeof(Home),
                         "Settings" => typeof(Settings),
+                        "Transcoder" => typeof(Transcoder), 
+                        "Info" => typeof(Info),
+                        
                         _ => typeof(Home)  // 默认导航到主页
                     };
 
@@ -76,6 +103,15 @@ namespace FFmpegFreeUI
             {
                 // 处理选择更改事件中的异常
                 System.Diagnostics.Debug.WriteLine($"Selection changed error: {ex.Message}");
+            }
+        }
+
+        // 添加一个方法用于控制 InfoBadge 显示
+        public void SetSettingsInfoBadgeVisible(bool visible)
+        {
+            if (SettingsNavItem != null && SettingsNavItem.InfoBadge is InfoBadge badge)    
+            {
+                badge.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
             }
         }
     }

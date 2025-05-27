@@ -317,5 +317,9 @@ public sealed partial class Settings : Microsoft.UI.Xaml.Controls.Page  // 修正 
             ErrorInfoBadge.Visibility = Visibility.Collapsed;
             StatusInfoBar.Title = "FFmpeg 状态";
         }
+
+        // 控制主窗口设置项的 InfoBadge
+        var mainWindow = (FFmpegFreeUI.MainWindow)App.MainWindow;
+        mainWindow.SetSettingsInfoBadgeVisible(isError);
     }
 }
