@@ -9,7 +9,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
-namespace FFmpegFreeUI.FFmpegService;
+namespace FFmpegWinUI.FFmpegService;
 
 public class FfmpegService : IFfmpegService
 {

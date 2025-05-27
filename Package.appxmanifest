@@ -15,7 +15,7 @@
   <mp:PhoneIdentity PhoneProductId="77cf60d9-a68c-4cb6-8118-494e7d0821e5" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>FFmpegFreeUI</DisplayName>
+    <DisplayName>FFmpegWinUI</DisplayName>
     <PublisherDisplayName>27180</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -34,8 +34,8 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="FFmpegFreeUI"
-        Description="FFmpegFreeUI"
+        DisplayName="FFmpegWinUI"
+        Description="FFmpegWinUI"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">

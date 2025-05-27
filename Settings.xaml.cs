@@ -19,9 +19,9 @@ using Windows.Storage;
 using System.IO.Compression;
 using System.Diagnostics;
 using System.Threading;
-using FFmpegFreeUI.FFmpegService;  // 添加 FFmpegService 命名空间引用
+using FFmpegWinUI.FFmpegService;  // 添加 FFmpegService 命名空间引用
 
-namespace FFmpegFreeUI;
+namespace FFmpegWinUI;
 
 public sealed partial class Settings : Microsoft.UI.Xaml.Controls.Page  // 修正 Page 的引用
 {
@@ -319,7 +319,7 @@ public sealed partial class Settings : Microsoft.UI.Xaml.Controls.Page  // 修正 
         }
 
         // 控制主窗口设置项的 InfoBadge
-        var mainWindow = (FFmpegFreeUI.MainWindow)App.MainWindow;
+        var mainWindow = (FFmpegWinUI.MainWindow)App.MainWindow;
         mainWindow.SetSettingsInfoBadgeVisible(isError);
     }
 }

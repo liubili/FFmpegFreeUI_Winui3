@@ -1,7 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
-namespace FFmpegFreeUI
+namespace FFmpegWinUI
 {
     public static class NavigationBadgeHelper
     {

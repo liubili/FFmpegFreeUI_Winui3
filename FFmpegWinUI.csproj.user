@@ -4,7 +4,7 @@
     <DebuggerFlavor>ProjectDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup>
-    <ActiveDebugProfile>FFmpegFreeUI (Unpackaged)</ActiveDebugProfile>
+    <ActiveDebugProfile>FFmpegWinUI (Unpackaged)</ActiveDebugProfile>
     <Source>G:\Work\Ai工程文件\ffmpegUI\1x\UWP画板 1.png</Source>
     <SmallTileSource>G:\Work\Ai工程文件\ffmpegUI\1x\UWP画板 1.png</SmallTileSource>
     <MediumTileSource>G:\Work\Ai工程文件\ffmpegUI\1x\UWP画板 1.png</MediumTileSource>
