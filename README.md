@@ -1,10 +1,10 @@
-# FFmpegFreeUI - WinUI 3 FFmpeg 管理工具
+# FFmpegWinUI - WinUI 3 FFmpeg 管理工具
 
 FFmpeg 管理与命令，基于 WinUI 3 和 .NET 8 开发。提供直观的界面来配置和管理 FFmpeg，让 FFmpeg 的安装和使用变得简单。
 基本是[FFmpegFreeUI](https://github.com/Lake1059/FFmpegFreeUI)重写而来
 
 ## 最新截图
-![屏幕截图 2025-05-26 125245](https://github.com/user-attachments/assets/fea3c5ab-3bff-44b0-aef4-2f1d97b93d13)
+![image](https://github.com/user-attachments/assets/aeeef237-78cc-4cdf-9517-70901203cebc)
 
 ## 功能概览
 
